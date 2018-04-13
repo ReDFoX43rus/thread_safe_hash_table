@@ -52,6 +52,8 @@ bool CHashTable<T>::Add(T value){
             parent->mtx.unlock();
         }
 
+        result->mtx.unlock();
+
         return false;
     }
 
@@ -165,14 +167,16 @@ node_t<T> *CHashTable<T>::InnerFind(T value, node_t<T> **parent){
 
         next->mtx.lock();
 
-        if(parent != nullptr)
+        if(*parent != nullptr)
             (*parent)->mtx.unlock();
 
         *parent = current;
         current = next;
     }
 
-    (*parent)->mtx.unlock();
+    if(*parent != nullptr)
+        (*parent)->mtx.unlock();
+
     *parent = current;
     return nullptr;
 }

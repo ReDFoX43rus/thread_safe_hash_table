@@ -1,7 +1,7 @@
 #ifndef HASH_TABLE_H
 #define HASH_TABLE_H
 
-#define MAIN_ARR_SIZE 255
+#define MAIN_ARR_SIZE 256
 
 #include <mutex>
 using namespace std;
