@@ -131,6 +131,7 @@ bool CHashTable<T>::Find(T value){
             parent->mtx.unlock();
         }
 
+        result->mtx.unlock();
         return true;
     }
 
