@@ -1,6 +1,7 @@
 #include "hash_table.h"
 
-#include <pthread.h>
+#include <thread>
+#include <vector>
 #include <iostream>
 
 using namespace std;
@@ -18,65 +19,56 @@ struct thread_arg_t{
     int from;
     int to;
     int step;
+
+    thread_arg_t() {}
+
+    thread_arg_t(int from, int to, int step){
+        this->from = from;
+        this->to = to;
+        this->step = step;
+    }
 };
 
-void *adder(void* arg){
-    thread_arg_t *info = (thread_arg_t*)arg;
-    int from = info->from;
-    int to = info->to;
-    int step = info->step;
+void adder(thread_arg_t info){
+    int from = info.from;
+    int to = info.to;
+    int step = info.step;
 
     for(int i = from; i <= to; i += step)
         ht.Add(i);
-
-    return nullptr;
 }
 
-void *remover(void* arg){
-    thread_arg_t *info = (thread_arg_t*)arg;
-    int from = info->from;
-    int to = info->to;
-    int step = info->step;
+void remover(thread_arg_t info){
+    int from = info.from;
+    int to = info.to;
+    int step = info.step;
 
     for(int i = from; i <= to; i += step)
         ht.Remove(i);
-
-    return nullptr;
 }
 
-void *handleRandoms(void* arg){
-    thread_arg_t *info = (thread_arg_t*)arg;
-
+void handleRandoms(thread_arg_t info){
     int action = rand()%2;
 
-    for(int i = 0; i < info->to; i++){
+    for(int i = 0; i < info.to; i++){
         if(action)
             ht.Add(rand());
         else
             ht.Remove(rand());
     }
-
-    return nullptr;
 }
 
 void handleAll(int from, int to, bool add){
     int n = to - from + 1;
 
-    pthread_t *threads = new pthread_t[n];
-    thread_arg_t *infos = new thread_arg_t[n];
-
+    std::vector<std::thread> threads;
     for(int i = 0; i < n; i++){
-        infos[i].from = i + from;
-        infos[i].to = i + from;
-        infos[i].step = 1;
-
-        pthread_create(&threads[i], NULL, add ? adder : remover, (void*)&infos[i]);
+        threads.push_back(std::thread(add ? adder : remover, thread_arg_t(i + from, i + from, 1)));
     }
 
     for(int i = 0; i < n; i++){
-        pthread_join(threads[i], NULL);
-    }
-
+        threads[i].join();
+    }    
 
     bool all = true, any = false;
     for(int i = from; i <= to; i++){
@@ -86,9 +78,6 @@ void handleAll(int from, int to, bool add){
     }
 
     cout << "Handle: all " << all << " any: " << any << endl;
-
-    delete[] infos;
-    delete[] threads;
 }
 
 int main(){
@@ -101,19 +90,14 @@ int main(){
 
     int n = 20;
 
-    pthread_t *threads = new pthread_t[n];
-    thread_arg_t arg = {
-        .from = 0,
-        .to = 20,
-        .step = 0
-    };
+    std::vector<std::thread> threads;
 
     for(int i = 0; i < n; i++){
-        pthread_create(&threads[i], NULL, handleRandoms, (void*)&arg);
+        threads.push_back(std::thread(handleRandoms, thread_arg_t(0, 20, 0)));
     }
 
     for(int i = 0; i < n; i++){
-        pthread_join(threads[i], NULL);
+        threads[i].join();
     }
 
     ht.Print();
